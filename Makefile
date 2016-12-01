@@ -1,3 +1,6 @@
+run: all
+	@./presentation
+
 all: presentation
 
 presentation: presentation.o
@@ -11,4 +14,4 @@ presentation.o: presentation.cxx
 clean:
 	$(RM) presentation *.o
 
-.PHONY: clean
+.PHONY: clean run

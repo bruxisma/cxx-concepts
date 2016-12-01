@@ -90,18 +90,21 @@ constexpr bool Iterator = require<
 >;
 
 template <class T>
-constexpr bool InputIterator = Pointer<T> or require<
-  EqualityComparable<T>,
-  Iterator<T>,
-  exists<alias::value_type, T>,
-  exists<alias::reference, T>,
-  either<
-    identical_to<detected_t<alias::reference, T>, ops::dereference, T>,
-    converts_to<detected_t<alias::value_type, T>, ops::dereference, T>
-  >,
-  identical_to<detected_t<alias::pointer, T>, ops::arrow, T>,
-  converts_to<detected_t<alias::value_type, T>, ops::dereference, T&>,
-  converts_to<input_iterator_tag, alias::iterator_category, T>
+constexpr bool InputIterator = either<
+  Pointer<T>,
+  require<
+    EqualityComparable<T>,
+    Iterator<T>,
+    exists<alias::value_type, T>,
+    exists<alias::reference, T>,
+    either<
+      identical_to<detected_t<alias::reference, T>, ops::dereference, T>,
+      converts_to<detected_t<alias::value_type, T>, ops::dereference, T>
+    >,
+    identical_to<detected_t<alias::pointer, T>, ops::arrow, T>,
+    converts_to<detected_t<alias::value_type, T>, ops::dereference, T&>,
+    converts_to<input_iterator_tag, alias::iterator_category, T>
+  >
 >;
 
 } /* namespace concepts */
@@ -109,17 +112,11 @@ constexpr bool InputIterator = Pointer<T> or require<
 static_assert(concepts::InputIterator<std::vector<int>::iterator>, "");
 static_assert(concepts::InputIterator<int*>, "");
 
-template <class InputIt, class UnaryFunction>
-auto each (InputIt first, InputIt last, UnaryFunction fun) {
-  using concepts::InputIterator;
-  static_assert(
-    InputIterator<InputIt>,
-    "template argument 'InputIt' does not model InputIterator");
-  for (; first != last; ++first) {
-    fun(*first);
-  }
-  return fun;
-}
+//template <class InputIt, class UnaryFunction>
+//auto each (InputIt first, InputIt last, UnaryFunction fun) {
+//  static_assert(concepts::InputIterator<InputIt>, "");
+//  return std::for_each(first, last, fun);
+//}
 
 /* The two definitions of 'each' below result in identical errors */
 //template <class InputIt, class UnaryFunction>
@@ -132,20 +129,19 @@ auto each (InputIt first, InputIt last, UnaryFunction fun) {
 //  }
 //  return fun;
 //}
+//
 
-//template <
-//  class InputIt,
-//  class UnaryFunction,
-//  class=enable_if_t<concepts::InputIterator<InputIt>>
-//> auto each (InputIt first, InputIt last, UnaryFunction fun) {
-//  for (; first != last; ++first) {
-//    fun(*first);
-//  }
-//  return fun;
-//}
+template <
+  class InputIt,
+  class UnaryFunction,
+  typename std::enable_if<concepts::InputIterator<InputIt>, int>::type=0
+> auto each (InputIt first, InputIt last, UnaryFunction fun) {
+  return std::for_each(first, last, fun);
+}
 
 int main () {
   std::vector<int> values { 1, 2, 3, 4 };
-  each(values.begin(), values.end(), [] (auto&& x) { std::printf("%d\n", x); });
-  //each(1, 2, [] (auto&&) { });
+  each(values.begin(), values.end(), [] (auto&& x) { std::printf("%d", x); });
+  each(1, 2, [] (auto&&) { });
+  std::puts("");
 }
